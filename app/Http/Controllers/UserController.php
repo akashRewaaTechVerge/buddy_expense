@@ -26,7 +26,7 @@ class UserController extends Controller {
                 'first_name' => 'required|min:3',
                 'last_name' => 'required|min:3',
                 'email' => 'required|email|unique:users',
-                'phone' => 'required|min:10',
+                'phone' => 'required|min:10|unique:users',
                 'password' => 'required|min:6'
             ] );
             if ( $validator->fails() ) {
@@ -58,47 +58,65 @@ class UserController extends Controller {
                     ] );
                 }
             }
-
         } catch ( \Exception $e ) {
             return response()->json( [
                 'status' => 422,
                 'message' => $e->getMessage()
             ] );
         }
-
     }
 
     // ---------------- [ ' Login ' ] -----------------
 
     public function login( Request $request ) {
         // ----------- [ ' laravel Validation ' ] ----------------
-        $validator = Validator::make( $request->all(), [
-            'phone' => 'required|min:10',
-            'password' => 'required|min:6',
-        ] );
-        if ( $validator->fails() ) {
-            return response( [ 'errors'=>$validator->errors()->all() ], 422 );
-        } else {
-            try {
+        try {
+            $validator = Validator::make( $request->all(), [
+                'phone' => 'required|min:10',
+                'password' => 'required|min:6',
+            ] );
+            if ( $validator->fails() ) {
+                return response( [ 'errors'=>$validator->errors()->all() ], 422 );
+            } else {
                 $user = User::where( 'phone', $request->phone )->first();
                 if ( !$user || !Hash::check( $request->password, $user->password ) ) {
                     return response()->json( [
                         'status' => 400,
-                        'message' => 'login Faild'
+                        'message' => 'login Faild',
+                        'data' => [
+                            'token' => [],
+                        ]
                     ] );
                 } else {
+                    $token = Str::random( 60 );
+                    $data =  User::where( 'id', $user->id )->update( array( 'token' => $token, ) );
                     return response()->json( [
                         'status' => 200,
-                        'message' => 'User Login Success'
+                        'message' => 'User Login Success',
+                        'data' => [
+                            'token' => $token,
+                        ]
                     ] );
                 }
-            } catch ( \Exception $e ) {
-                return response()->json( [
-                    'status' => 422,
-                    'message' => $e->getMessage()
-                ] );
-
             }
+        } catch ( \Exception $e ) {
+            return response()->json( [
+                'status' => 422,
+                'message' => $e->getMessage()
+            ] );
+        }
+    }
+
+    // -------------------- [ ' Logout ' ] --------------------
+
+    public function logout( Request $request ) {
+        try {
+            $userTokens = User::where( 'phone', $request->phone )->first();
+            $token->delete();
+
+            return response()->json( [ 'status' => 'success', 'message' => 'Logged out successfully' ] );
+        } catch ( \Exception $e ) {
+            return response()->json( [ 'status' => 'error', 'message' => $e->getMessage() ] );
         }
     }
 }
