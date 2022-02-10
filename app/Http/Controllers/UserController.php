@@ -94,6 +94,7 @@ class UserController extends Controller {
                 }
             } catch ( \Exception $e ) {
                 return response()->json( [
+                    'status' => 422,
                     'message' => $e->getMessage()
                 ] );
 
