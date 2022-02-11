@@ -100,5 +100,20 @@ class UserController extends Controller {
             }
         }
     }
+// -------- [' For Logout'] ---------------
+
+    public function logout(Request $request)
+    {       
+        
+        try {
+            auth()->user()->tokens()->each(function ($token) {
+               $token->delete();
+            });
+             return response()->json(['status' => 'success', 'message' => 'Logged out successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
 }
 
